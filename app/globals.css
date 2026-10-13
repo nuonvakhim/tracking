@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
+/*
+ * Colors follow the user's Telegram theme. telegram-web-app.js sets the
+ * --tg-theme-* variables on <html>; the fallbacks below are for opening the
+ * app in a normal browser during development.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --fb-bg: #ffffff;
+  --fb-fg: #0f1419;
+  --fb-hint: #8a9099;
+  --fb-secondary: #f1f2f4;
+  --fb-button: #2481cc;
+  --fb-button-fg: #ffffff;
+  --fb-accent: #2481cc;
+  --fb-danger: #d93a3a;
+  --fb-separator: #e3e5e8;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Signal colors for small marks only (icons, dots, bars) — never for text. */
+  --income: #1f9d55;
+  --expense: #d93a3a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --fb-bg: #1c1c1e;
+    --fb-fg: #f2f2f7;
+    --fb-hint: #8e8e93;
+    --fb-secondary: #000000;
+    --fb-button: #3e88f7;
+    --fb-accent: #5aa0ff;
+    --fb-danger: #ff6b6b;
+    --fb-separator: #2c2c2e;
+    --income: #3cc47c;
+    --expense: #ff6b6b;
   }
 }
 
+@theme inline {
+  --color-bg: var(--tg-theme-bg-color, var(--fb-bg));
+  --color-fg: var(--tg-theme-text-color, var(--fb-fg));
+  --color-hint: var(--tg-theme-hint-color, var(--fb-hint));
+  --color-section: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, var(--fb-bg)));
+  --color-secondary: var(--tg-theme-secondary-bg-color, var(--fb-secondary));
+  --color-button: var(--tg-theme-button-color, var(--fb-button));
+  --color-button-fg: var(--tg-theme-button-text-color, var(--fb-button-fg));
+  --color-accent: var(--tg-theme-accent-text-color, var(--tg-theme-link-color, var(--fb-accent)));
+  --color-danger: var(--tg-theme-destructive-text-color, var(--fb-danger));
+  --color-separator: var(--tg-theme-section-separator-color, var(--fb-separator));
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-secondary);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Telegram safe areas (fullscreen mode / notches); 0 outside Telegram. */
+.safe-bottom {
+  padding-bottom: calc(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 0.5rem);
 }

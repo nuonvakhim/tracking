@@ -7,6 +7,7 @@ import { MoneyProvider } from "@/lib/client/money";
 import { alertDialog, confirmDialog, haptic, initWebApp, waitForWebApp } from "@/lib/client/telegram";
 import { convert, formatMoney, monthKeyOf, monthRange, shiftMonth, today } from "@/lib/format";
 import { CURRENCIES, type Currency, type Profile, type Rate, type SavingsGoal, type Summary, type Transaction, type TxType } from "@/lib/types";
+import { BudgetForm } from "./BudgetForm";
 import { HistoryTab } from "./HistoryTab";
 import { HomeTab } from "./HomeTab";
 import { GoalForm, SavingsEntryForm } from "./SavingsForms";
@@ -18,6 +19,7 @@ type Tab = "home" | "history" | "savings";
 type SheetState =
   | { kind: "transaction"; type: TxType }
   | { kind: "goal" }
+  | { kind: "budget" }
   | { kind: "entry"; goal: SavingsGoal; mode: "deposit" | "withdraw" };
 
 type Status = "loading" | "ready" | "unauthorized" | "error";
@@ -201,6 +203,8 @@ export default function TrackerApp() {
             summary={summary}
             monthKey={currentMonth}
             monthTx={months[currentMonth]}
+            budget={profile.budget}
+            onEditBudget={() => setSheet({ kind: "budget" })}
             onSeeAll={() => {
               setHistoryMonth(currentMonth);
               setTab("history");
@@ -278,6 +282,17 @@ export default function TrackerApp() {
         {sheet?.kind === "transaction" && (
           <Sheet title="New transaction" onClose={() => setSheet(null)}>
             <TransactionForm initialType={sheet.type} onSaved={addTransaction} />
+          </Sheet>
+        )}
+        {sheet?.kind === "budget" && (
+          <Sheet title="Budget" onClose={() => setSheet(null)}>
+            <BudgetForm
+              budget={profile.budget}
+              onSaved={(p) => {
+                setProfile((prev) => prev && { ...prev, budget: p.budget });
+                setSheet(null);
+              }}
+            />
           </Sheet>
         )}
         {sheet?.kind === "goal" && (

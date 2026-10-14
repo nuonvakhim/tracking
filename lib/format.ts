@@ -38,6 +38,11 @@ export function monthRange(monthKey: string): { from: string; to: string } {
   return { from: `${monthKey}-01`, to: toISODate(new Date(y, m, 0)) };
 }
 
+export function daysInMonth(isoDate: string): number {
+  const [y, m] = isoDate.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
 export function monthLabel(monthKey: string): string {
   const [y, m] = monthKey.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });

@@ -1,12 +1,13 @@
 "use client";
 
+import { budgetStatus } from "@/lib/budget";
 import { findCategory } from "@/lib/categories";
 import { useMoney } from "@/lib/client/money";
 import { openExternal } from "@/lib/client/telegram";
-import { formatMoney, monthLabel } from "@/lib/format";
-import { CURRENCIES, type Summary, type Transaction } from "@/lib/types";
+import { formatMoney, monthLabel, today } from "@/lib/format";
+import { CURRENCIES, type Budget, type Summary, type Transaction } from "@/lib/types";
 import { GroupedTransactions, useTotals } from "./TransactionList";
-import { Card, SectionTitle } from "./ui";
+import { Card, Meter, SectionTitle } from "./ui";
 
 const MAX_CATEGORY_ROWS = 6;
 
@@ -15,6 +16,8 @@ export function HomeTab({
   summary,
   monthKey,
   monthTx,
+  budget,
+  onEditBudget,
   onSeeAll,
   onSelect,
 }: {
@@ -22,6 +25,8 @@ export function HomeTab({
   summary: Summary;
   monthKey: string;
   monthTx: Transaction[] | undefined;
+  budget: Budget | null;
+  onEditBudget: () => void;
   onSeeAll: () => void;
   onSelect: (tx: Transaction) => void;
 }) {
@@ -39,6 +44,39 @@ export function HomeTab({
         </p>
         <p className="mt-1 text-[13px] text-hint">{display(saved)} set aside in savings</p>
       </Card>
+
+      {budget ? (
+        monthTx && (
+          <div>
+            <SectionTitle
+              action={
+                <button type="button" onClick={onEditBudget} className="text-[13px] text-accent">
+                  Edit
+                </button>
+              }
+            >
+              Daily budget
+            </SectionTitle>
+            <BudgetCard budget={budget} monthTx={monthTx} />
+          </div>
+        )
+      ) : (
+        <Card className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-medium">Daily budget</p>
+            <p className="text-[13px] text-hint">
+              Set a monthly budget to see how much you can spend each day.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onEditBudget}
+            className="shrink-0 rounded-full bg-button px-4 py-1.5 text-[13px] font-semibold text-button-fg"
+          >
+            Set up
+          </button>
+        </Card>
+      )}
 
       <div>
         <SectionTitle>{monthLabel(monthKey)}</SectionTitle>
@@ -133,6 +171,46 @@ function RateNote() {
         " · estimated (live rate unavailable)"
       )}
     </p>
+  );
+}
+
+/** Today's allowance from the monthly budget, plus how the month is going. */
+function BudgetCard({ budget, monthTx }: { budget: Budget; monthTx: Transaction[] }) {
+  const money = useMoney();
+  const display = (v: number) => formatMoney(v, money.currency);
+  const excluded = new Set(budget.excluded);
+  const expenses = monthTx
+    .filter((t) => t.type === "expense" && !excluded.has(t.category))
+    .map((t) => ({ amount: money.toDisplay(t.amount, t.currency), occurred_on: t.occurred_on }));
+  const s = budgetStatus(money.toDisplay(budget.amount, budget.currency), expenses, today());
+  const overToday = s.leftToday < 0;
+
+  return (
+    <Card>
+      <p className="text-[13px] text-hint">{overToday ? "Over today's budget by" : "Left to spend today"}</p>
+      <p className={`tabular mt-0.5 text-[32px] leading-tight font-bold ${overToday ? "text-danger" : ""}`}>
+        {display(Math.abs(s.leftToday))}
+      </p>
+      <p className="tabular mb-2 text-[13px] text-hint">
+        Spent {display(s.spentToday)} of {display(s.allowance)} today
+      </p>
+      <Meter
+        value={s.allowance > 0 ? s.spentToday / s.allowance : 1}
+        label="Today's budget used"
+        danger={overToday}
+      />
+      <div className="tabular mt-3 flex items-baseline justify-between gap-2 border-t border-separator pt-3 text-[13px]">
+        <span className="text-hint">
+          {s.daysLeft} {s.daysLeft === 1 ? "day" : "days"} left this month
+        </span>
+        <span className={s.leftMonth < 0 ? "text-danger" : ""}>
+          {s.leftMonth < 0
+            ? `${display(-s.leftMonth)} over`
+            : `${display(s.leftMonth)} left`}{" "}
+          <span className="text-hint">of {money.format(budget.amount, budget.currency)}</span>
+        </span>
+      </div>
+    </Card>
   );
 }
 

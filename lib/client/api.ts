@@ -1,6 +1,6 @@
 "use client";
 
-import type { Currency, Profile, Rate, SavingsGoal, Summary, Transaction, TxType } from "@/lib/types";
+import type { Budget, Currency, Profile, Rate, SavingsGoal, Summary, Transaction, TxType } from "@/lib/types";
 import { webApp } from "./telegram";
 
 const TIMEOUT_MS = 15_000;
@@ -35,6 +35,10 @@ export const api = {
 
   setCurrency: (currency: Currency) =>
     request<{ profile: Profile }>("/api/me", { method: "PATCH", body: JSON.stringify({ currency }) }),
+
+  /** null removes the budget. */
+  setBudget: (budget: Budget | null) =>
+    request<{ profile: Profile }>("/api/me", { method: "PATCH", body: JSON.stringify({ budget }) }),
 
   transactions: (from: string, to: string) =>
     request<{ transactions: Transaction[] }>(

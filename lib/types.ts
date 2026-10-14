@@ -7,6 +7,15 @@ export type Profile = {
   first_name: string | null;
   /** Display currency; every amount is converted to it. */
   currency: Currency;
+  budget: Budget | null;
+};
+
+/** Monthly spending budget. */
+export type Budget = {
+  amount: number;
+  currency: Currency;
+  /** Expense category ids that don't count toward the budget. */
+  excluded: string[];
 };
 
 export type Transaction = {

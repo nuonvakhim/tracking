@@ -199,7 +199,15 @@ export function parseAmount(raw: string): number {
 }
 
 /** 0..1 meter: same-hue track and fill. */
-export function Meter({ value, label }: { value: number; label: string }) {
+export function Meter({
+  value,
+  label,
+  danger = false,
+}: {
+  value: number;
+  label: string;
+  danger?: boolean;
+}) {
   const pct = Math.max(0, Math.min(1, value)) * 100;
   return (
     <div
@@ -208,9 +216,12 @@ export function Meter({ value, label }: { value: number; label: string }) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pct)}
-      className="h-2 w-full overflow-hidden rounded-full bg-button/15"
+      className={`h-2 w-full overflow-hidden rounded-full ${danger ? "bg-danger/15" : "bg-button/15"}`}
     >
-      <div className="h-full rounded-full bg-button transition-[width]" style={{ width: `${pct}%` }} />
+      <div
+        className={`h-full rounded-full transition-[width] ${danger ? "bg-danger" : "bg-button"}`}
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }

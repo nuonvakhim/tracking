@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import { categoryIds } from "@/lib/categories";
 import { HttpError, withUser } from "@/lib/server/auth";
+import { checkBudgetAlert } from "@/lib/server/budgetAlerts";
 import { db } from "@/lib/server/db";
 import { amount, date, oneOf, readJson, text } from "@/lib/server/validate";
 import { CURRENCIES, type Transaction, type TxType } from "@/lib/types";
@@ -47,7 +49,12 @@ export const POST = withUser(async (request, user) => {
     .single();
   if (error) throw error;
 
-  return Response.json({ transaction: normalize(data) }, { status: 201 });
+  const transaction = normalize(data);
+  // A failed alert must never fail the save, so it runs after the response.
+  after(() =>
+    checkBudgetAlert(user.id, transaction).catch((err) => console.error("Budget alert failed:", err)),
+  );
+  return Response.json({ transaction }, { status: 201 });
 });
 
 function normalize(row: Record<string, unknown>): Transaction {

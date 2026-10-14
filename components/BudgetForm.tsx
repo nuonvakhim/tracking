@@ -23,6 +23,7 @@ export function BudgetForm({
   const [amount, setAmount] = useState(budget ? String(budget.amount) : "");
   const [currency, setCurrency] = useState<Currency>(budget?.currency ?? money.currency);
   const [excluded, setExcluded] = useState<string[]>(budget?.excluded ?? DEFAULT_EXCLUDED);
+  const [alerts, setAlerts] = useState(budget?.alerts ?? true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,7 +53,7 @@ export function BudgetForm({
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (valid) void save({ amount: value, currency, excluded });
+    if (valid) void save({ amount: value, currency, excluded, alerts });
   }
 
   return (
@@ -91,6 +92,30 @@ export function BudgetForm({
           <p className="mt-1.5 text-[12px] text-danger">Pick at least one category.</p>
         )}
       </div>
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={alerts}
+        onClick={() => {
+          haptic.tap();
+          setAlerts((a) => !a);
+        }}
+        className="flex w-full items-center justify-between gap-3 rounded-xl bg-secondary px-3.5 py-3 text-left"
+      >
+        <span>
+          <span className="block text-[15px]">Telegram alerts</span>
+          <span className="block text-[12px] text-hint">Message me at 80% and 100% of the budget</span>
+        </span>
+        <span
+          aria-hidden
+          className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${alerts ? "bg-button" : "bg-hint/40"}`}
+        >
+          <span
+            className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-[left] ${alerts ? "left-[18px]" : "left-0.5"}`}
+          />
+        </span>
+      </button>
 
       <ErrorText>{error}</ErrorText>
       <PrimaryButton type="submit" disabled={!valid || busy}>

@@ -16,6 +16,8 @@ export type Budget = {
   currency: Currency;
   /** Expense category ids that don't count toward the budget. */
   excluded: string[];
+  /** Telegram message at 80% and 100% of the budget. */
+  alerts: boolean;
 };
 
 export type Transaction = {

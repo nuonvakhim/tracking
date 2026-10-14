@@ -9,6 +9,25 @@ export type TelegramUser = {
 };
 
 const MAX_AGE_SECONDS = 24 * 60 * 60;
+const SEND_TIMEOUT_MS = 5_000;
+
+/**
+ * Sends a bot message to a user's private chat. One attempt, no retries. Fails
+ * if the user has never started the bot or has blocked it.
+ */
+export async function sendMessage(chatId: number, text: string): Promise<void> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN must be set");
+
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text }),
+    signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+  });
+  // Don't include the URL in errors: it contains the bot token.
+  if (!res.ok) throw new Error(`Telegram sendMessage failed (${res.status})`);
+}
 
 /**
  * Validates Telegram Mini App `initData` as described in

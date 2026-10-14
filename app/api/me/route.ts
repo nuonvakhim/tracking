@@ -6,7 +6,7 @@ import { amount, oneOf, readJson } from "@/lib/server/validate";
 import { CURRENCIES, type Currency, type Profile, type Summary } from "@/lib/types";
 
 const PROFILE_COLUMNS =
-  "telegram_id, first_name, currency, budget_amount, budget_currency, budget_excluded";
+  "telegram_id, first_name, currency, budget_amount, budget_currency, budget_excluded, budget_alerts";
 
 // Called on app start: creates the profile on first use and returns totals + rate.
 export const GET = withUser(async (_request, user) => {
@@ -43,12 +43,18 @@ export const PATCH = withUser(async (request, user) => {
   return Response.json({ profile: toProfile(profile) });
 });
 
-/** `budget: null` removes the budget; otherwise amount, currency and excluded are all required. */
+/**
+ * `budget: null` removes the budget; otherwise every Budget field is required.
+ * Any change resets the alerts, so a new amount gets its own 80% / 100% messages.
+ */
 function budgetColumns(value: unknown) {
-  if (value === null) return { budget_amount: null };
+  const resetAlerts = { budget_alert_month: null, budget_alert_level: 0 };
+  if (value === null) return { budget_amount: null, ...resetAlerts };
   if (!value || typeof value !== "object") throw new HttpError(400, "Invalid budget");
   const budget = value as Record<string, unknown>;
-  if (!Array.isArray(budget.excluded)) throw new HttpError(400, "Invalid budget");
+  if (!Array.isArray(budget.excluded) || typeof budget.alerts !== "boolean") {
+    throw new HttpError(400, "Invalid budget");
+  }
 
   const allowed = categoryIds("expense");
   const excluded = [...new Set(budget.excluded.map((id) => oneOf(id, allowed)))];
@@ -59,6 +65,8 @@ function budgetColumns(value: unknown) {
     budget_amount: amount(budget.amount),
     budget_currency: oneOf(budget.currency, CURRENCIES),
     budget_excluded: excluded,
+    budget_alerts: budget.alerts,
+    ...resetAlerts,
   };
 }
 
@@ -66,16 +74,23 @@ type ProfileRow = Omit<Profile, "budget"> & {
   budget_amount: number | string | null;
   budget_currency: Currency;
   budget_excluded: string[];
+  budget_alerts: boolean;
 };
 
 function toProfile(row: unknown): Profile {
-  const { budget_amount, budget_currency, budget_excluded, ...profile } = row as ProfileRow;
+  const { budget_amount, budget_currency, budget_excluded, budget_alerts, ...profile } =
+    row as ProfileRow;
   return {
     ...profile,
     budget:
       budget_amount == null
         ? null
-        : { amount: Number(budget_amount), currency: budget_currency, excluded: budget_excluded },
+        : {
+            amount: Number(budget_amount),
+            currency: budget_currency,
+            excluded: budget_excluded,
+            alerts: budget_alerts,
+          },
   };
 }
 

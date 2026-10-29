@@ -17,7 +17,9 @@ export function HomeTab({
   monthKey,
   monthTx,
   budget,
+  reminders,
   onEditBudget,
+  onToggleReminders,
   onSeeAll,
   onSelect,
 }: {
@@ -26,7 +28,9 @@ export function HomeTab({
   monthKey: string;
   monthTx: Transaction[] | undefined;
   budget: Budget | null;
+  reminders: boolean;
   onEditBudget: () => void;
+  onToggleReminders: () => void;
   onSeeAll: () => void;
   onSelect: (tx: Transaction) => void;
 }) {
@@ -124,6 +128,29 @@ export function HomeTab({
           <GroupedTransactions transactions={monthTx.slice(0, 6)} onSelect={onSelect} />
         )}
       </div>
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={reminders}
+        onClick={onToggleReminders}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-section px-4 py-3 text-left"
+      >
+        <span>
+          <span className="block text-[15px]">Daily reminder</span>
+          <span className="block text-[12px] text-hint">
+            Message me on Telegram in the evening if I haven&apos;t added an expense today
+          </span>
+        </span>
+        <span
+          aria-hidden
+          className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${reminders ? "bg-button" : "bg-hint/40"}`}
+        >
+          <span
+            className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-[left] ${reminders ? "left-[18px]" : "left-0.5"}`}
+          />
+        </span>
+      </button>
 
       <RateNote />
     </div>

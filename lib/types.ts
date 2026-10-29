@@ -7,6 +7,8 @@ export type Profile = {
   first_name: string | null;
   /** Display currency; every amount is converted to it. */
   currency: Currency;
+  /** Daily Telegram message when no expense has been logged by the evening. */
+  reminders: boolean;
   budget: Budget | null;
 };
 

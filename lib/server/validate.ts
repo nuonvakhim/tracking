@@ -45,6 +45,17 @@ export function text(value: unknown, { max, required = false }: { max: number; r
   return trimmed || null;
 }
 
+/** An IANA timezone name such as "Asia/Phnom_Penh", or null if missing or unknown. */
+export function timezone(value: string | null): string | null {
+  if (!value || value.length > 64) return null;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T {
   if (typeof value !== "string" || !allowed.includes(value as T)) {
     throw new HttpError(400, "Invalid value");

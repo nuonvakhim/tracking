@@ -2,18 +2,25 @@ import { categoryIds } from "@/lib/categories";
 import { HttpError, withUser } from "@/lib/server/auth";
 import { db } from "@/lib/server/db";
 import { getRate } from "@/lib/server/rates";
-import { amount, oneOf, readJson } from "@/lib/server/validate";
+import { amount, oneOf, readJson, timezone } from "@/lib/server/validate";
 import { CURRENCIES, type Currency, type Profile, type Summary } from "@/lib/types";
 
 const PROFILE_COLUMNS =
-  "telegram_id, first_name, currency, budget_amount, budget_currency, budget_excluded, budget_alerts";
+  "telegram_id, first_name, currency, reminders, budget_amount, budget_currency, budget_excluded, budget_alerts";
 
 // Called on app start: creates the profile on first use and returns totals + rate.
-export const GET = withUser(async (_request, user) => {
+export const GET = withUser(async (request, user) => {
+  // The daily reminder needs the user's local date, which the server can't know.
+  const tz = timezone(request.headers.get("x-timezone"));
   const { data: profile, error } = await db()
     .from("profiles")
     .upsert(
-      { telegram_id: user.id, first_name: user.first_name ?? null, username: user.username ?? null },
+      {
+        telegram_id: user.id,
+        first_name: user.first_name ?? null,
+        username: user.username ?? null,
+        ...(tz && { timezone: tz }),
+      },
       { onConflict: "telegram_id" },
     )
     .select(PROFILE_COLUMNS)
@@ -24,11 +31,15 @@ export const GET = withUser(async (_request, user) => {
   return Response.json({ profile: toProfile(profile), summary, rate });
 });
 
-// Updates whichever of `currency` and `budget` the body contains.
+// Updates whichever of `currency`, `reminders` and `budget` the body contains.
 export const PATCH = withUser(async (request, user) => {
   const body = await readJson(request);
   const update: Record<string, unknown> = {};
   if ("currency" in body) update.currency = oneOf(body.currency, CURRENCIES);
+  if ("reminders" in body) {
+    if (typeof body.reminders !== "boolean") throw new HttpError(400, "Invalid reminders");
+    update.reminders = body.reminders;
+  }
   if ("budget" in body) Object.assign(update, budgetColumns(body.budget));
   if (Object.keys(update).length === 0) throw new HttpError(400, "Nothing to update");
 

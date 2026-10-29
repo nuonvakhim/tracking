@@ -16,6 +16,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const initData = webApp()?.initData;
   if (initData) headers.set("Authorization", `tma ${initData}`);
   if (init.body) headers.set("Content-Type", "application/json");
+  headers.set("X-Timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   let res: Response;
   try {
@@ -35,6 +36,9 @@ export const api = {
 
   setCurrency: (currency: Currency) =>
     request<{ profile: Profile }>("/api/me", { method: "PATCH", body: JSON.stringify({ currency }) }),
+
+  setReminders: (reminders: boolean) =>
+    request<{ profile: Profile }>("/api/me", { method: "PATCH", body: JSON.stringify({ reminders }) }),
 
   /** null removes the budget. */
   setBudget: (budget: Budget | null) =>

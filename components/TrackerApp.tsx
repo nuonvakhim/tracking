@@ -174,6 +174,19 @@ export default function TrackerApp() {
     }
   }
 
+  async function toggleReminders() {
+    // Same approach as the currency switch: apply now, roll back if saving fails.
+    const next = !profile!.reminders;
+    haptic.tap();
+    setProfile((p) => p && { ...p, reminders: next });
+    try {
+      await api.setReminders(next);
+    } catch (err) {
+      setProfile((p) => p && { ...p, reminders: !next });
+      void alertDialog((err as Error).message);
+    }
+  }
+
   return (
     <MoneyProvider currency={currency} rate={rate}>
       <div className="mx-auto min-h-dvh max-w-lg px-4 pt-4 pb-36">
@@ -204,7 +217,9 @@ export default function TrackerApp() {
             monthKey={currentMonth}
             monthTx={months[currentMonth]}
             budget={profile.budget}
+            reminders={profile.reminders}
             onEditBudget={() => setSheet({ kind: "budget" })}
+            onToggleReminders={() => void toggleReminders()}
             onSeeAll={() => {
               setHistoryMonth(currentMonth);
               setTab("history");
